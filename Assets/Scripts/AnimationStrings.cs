@@ -6,6 +6,11 @@ using System.Threading.Tasks;
 
 internal class AnimationStrings
 {
+    //player
     internal static string isMoving = "isMoving";
+    internal static string isGrounded = "isGrounded";
+    internal static string isJumping = "isJumping";
+
+    //objects
     internal static string isActivated = "isActivated";
 }
