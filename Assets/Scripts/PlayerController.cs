@@ -143,16 +143,7 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    public void OnRangedAttack(InputAction.CallbackContext context)
-    {
-        if(context.started)
-        {
-            animator.SetTrigger(AnimationStrings.rangedAttack);
 
-            if (touchingDirections.IsGrounded)
-                animator.SetTrigger(AnimationStrings.ground_interrupt);
-        }
-    }
 
     // Jump keys pressed
     public void OnJump(InputAction.CallbackContext context)
@@ -208,3 +199,4 @@ public class PlayerController : MonoBehaviour
         rb.velocity = new Vector2(knockback.x, knockback.y + rb.velocity.y);
     }
 }
+

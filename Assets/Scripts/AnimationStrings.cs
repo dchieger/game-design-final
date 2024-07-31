@@ -13,7 +13,7 @@ internal class AnimationStrings
     internal static string isMoving = "isMoving";
     internal static string canMove = "canMove";
     internal static string attack = "attack";
-    internal static string rangedAttack = "rangedAttack";
+    // Removed the rangedAttack string
     internal static string jump = "jump";
     internal static string ground_interrupt = "groundInterrupt";
     internal static string air_interrupt = "airInterrupt";
