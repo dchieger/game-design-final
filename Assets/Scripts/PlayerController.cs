@@ -5,7 +5,6 @@ using UnityEngine.InputSystem;
 public class PlayerController : MonoBehaviour
 {
     public float walkSpeed = 3f;
-    public float runSpeed = 6f;
     public float airWalkSpeed = 3f;
     public float attackingMoveSpeed = 2f;
     public float jumpImpulse = 8f;
@@ -21,11 +20,6 @@ public class PlayerController : MonoBehaviour
     private bool _isFacingRight = true;
 
     internal bool IsFacingRight { get { return _isFacingRight; } set { _isFacingRight = value; animator.SetBool(AnimationStrings.isFacingRight, value); } }
-
-    [SerializeField]
-    private bool _isRunning;
-
-    internal bool IsRunning { get { return _isRunning; } set { _isRunning = value; animator.SetBool(AnimationStrings.isRunning, value); } }
 
     [SerializeField]
     private bool _isMoving;
@@ -61,11 +55,6 @@ public class PlayerController : MonoBehaviour
                     {
                         // Attack preceeds other movement
                         return attackingMoveSpeed;
-                    }
-                    if (_isRunning)
-                    {
-                        // Run Move
-                        return runSpeed;
                     }
                     else
                     {
@@ -141,20 +130,6 @@ public class PlayerController : MonoBehaviour
         // Allowed to switch direction
         if (IsAlive)
             SetFacingDirection(moveInput);
-    }
-
-    public void OnRun(InputAction.CallbackContext context)
-    {
-        if (context.started)
-        {
-            IsRunning = true;
-            animator.SetBool(AnimationStrings.isRunning, _isRunning);
-        }
-        else if (context.canceled)
-        {
-            IsRunning = false;
-            animator.SetBool(AnimationStrings.isRunning, _isRunning);
-        }
     }
 
     public void OnAttack(InputAction.CallbackContext context)

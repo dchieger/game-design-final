@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 internal class AnimationStrings
 {
-    //player                                                                  internal static string xVelocity = "xVelocity";
+    //player
     internal static string xVelocity = "xVelocity";
     internal static string yVelocity = "yVelocity";
     internal static string isGrounded = "isGrounded";
@@ -17,7 +17,6 @@ internal class AnimationStrings
     internal static string jump = "jump";
     internal static string ground_interrupt = "groundInterrupt";
     internal static string air_interrupt = "airInterrupt";
-    internal static string isRunning = "isRunning";
     internal static string isFacingRight = "isFacingRight";
     internal static string isOnWall = "isOnWall";
     internal static string isOnCeiling = "isOnCeiling";
@@ -26,6 +25,6 @@ internal class AnimationStrings
     internal static string isAlive = "isAlive";
     internal static string isHit = "isHit";
     internal static string lockVelocity = "lockVelocity";
-    //objects                                                             
+    //objects
     internal static string isActivated = "isActivated";
 }
