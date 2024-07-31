@@ -56,5 +56,5 @@
         "temp/": true,
         "Temp/": true
     },
-    "dotnet.defaultSolution": "cs4483-final.sln"
+    "dotnet.defaultSolution": "game-design-final.sln"
 }

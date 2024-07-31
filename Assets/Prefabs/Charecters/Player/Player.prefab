@@ -12,10 +12,12 @@ GameObject:
   - component: {fileID: 3701502860678914965}
   - component: {fileID: 2524615952020940953}
   - component: {fileID: 2683819071882470055}
+  - component: {fileID: 7030314099582634469}
   - component: {fileID: 8672710576144014977}
   - component: {fileID: 5122304073197045931}
   - component: {fileID: 571454536285384998}
-  m_Layer: 0
+  - component: {fileID: 2149090688652969764}
+  m_Layer: 7
   m_Name: Player
   m_TagString: Player
   m_Icon: {fileID: 0}
@@ -128,8 +130,45 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e9979dbb2af55954c9283ea2332cb3ea, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speed: 10
-  _isFacingRight: 1
+  walkSpeed: 3
+  runSpeed: 6
+  airWalkSpeed: 3
+  attackingMoveSpeed: 2
+  jumpImpulse: 8
+  groundDistance: 0.05
+  _isFacingRight: 0
+  _isRunning: 0
+  _isMoving: 0
+--- !u!114 &7030314099582634469
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3793148439318264696}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 741753d108e1b45089ac83f1860bc751, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  damageableHit:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 2683819071882470055}
+        m_TargetAssemblyTypeName: PlayerController, Assembly-CSharp
+        m_MethodName: OnHit
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+  _maxHealth: 100
+  _health: 100
+  invincibilityTime: 0.25
 --- !u!114 &8672710576144014977
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -219,6 +258,38 @@ MonoBehaviour:
       m_Calls: []
     m_ActionId: 65c90ce4-68cf-441d-918d-3988aebd8509
     m_ActionName: UI/TrackedDeviceOrientation
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 2683819071882470055}
+        m_TargetAssemblyTypeName: PlayerController, Assembly-CSharp
+        m_MethodName: Jump
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: a4b47998-e259-4dd6-8161-4ee4df008d54
+    m_ActionName: Player/Jump[/Keyboard/space]
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 2683819071882470055}
+        m_TargetAssemblyTypeName: PlayerController, Assembly-CSharp
+        m_MethodName: OnRun
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: d383179b-04f5-460f-ae15-15a13be05c17
+    m_ActionName: Player/Run[/Keyboard/leftShift]
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: 
   m_DefaultActionMap: Player
@@ -234,7 +305,7 @@ Animator:
   m_GameObject: {fileID: 3793148439318264696}
   m_Enabled: 1
   m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 9100000, guid: e37a2d42fb6702f4796e18af84c0c50e, type: 2}
+  m_Controller: {fileID: 9100000, guid: dc4336a903f794f3e9ca1b7d21cc819a, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -277,6 +348,39 @@ CapsuleCollider2D:
   m_IsTrigger: 0
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: -0.13398111, y: -0.2600808}
-  m_Size: {x: 0.3686459, y: 0.53152466}
+  m_Offset: {x: -0.13398111, y: -0.23900545}
+  m_Size: {x: 0.3686459, y: 0.48937392}
   m_Direction: 0
+--- !u!114 &2149090688652969764
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3793148439318264696}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 204ed2565065b4c7a806c598926a325e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  touchingFilter:
+    useTriggers: 0
+    useLayerMask: 0
+    useDepth: 0
+    useOutsideDepth: 0
+    useNormalAngle: 0
+    useOutsideNormalAngle: 0
+    layerMask:
+      serializedVersion: 2
+      m_Bits: 0
+    minDepth: 0
+    maxDepth: 0
+    minNormalAngle: 0
+    maxNormalAngle: 0
+  groundDistance: 0.05
+  wallDistance: 0.2
+  ceilingDistance: 0.05
+  wallCheckDirection: {x: 0, y: 0}
+  _isOnWall: 0
+  _isOnCeiling: 0
+  _isGrounded: 0
