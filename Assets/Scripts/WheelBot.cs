@@ -14,6 +14,7 @@ public class WheelBot : MonoBehaviour
     {
         animator = GetComponent<Animator>();
         damageable = GetComponent<Damageable>();
+        damageable.damageableHit.AddListener(OnDamageTaken);
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
@@ -30,6 +31,16 @@ public class WheelBot : MonoBehaviour
         animator.SetTrigger("bot_weapon_charge");
         GameObject projectile = Instantiate(projectilePrefab, firePoint.position, firePoint.rotation);
         projectile.GetComponent<Projectile>().Initialize(target);
-        animator.SetTrigger("bot_shoot");
+        animator.SetTrigger("shoot");
+    }
+
+    private void OnDamageTaken(int damage, Vector2 knockback)
+    {
+        animator.SetTrigger("hit");
+        if (!damageable.IsAlive)
+        {
+            animator.SetBool("isAlive", false);
+            animator.SetTrigger("bot_death");
+        }
     }
 }
