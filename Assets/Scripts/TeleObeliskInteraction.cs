@@ -1,13 +1,15 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class TeleObeliskInteraction : MonoBehaviour
 {
     Animator animator;
     private bool playerInRange = false;
-
-    private void Awake(){
+    public int sceneToLoad;
+    private void Awake()
+    {
         animator = GetComponent<Animator>();
     }
 
@@ -29,18 +31,22 @@ public class TeleObeliskInteraction : MonoBehaviour
 
     private void Update()
     {
-        if (playerInRange && Input.GetKeyDown(KeyCode.F))
+        if (playerInRange && Input.GetKeyDown(KeyCode.F) && !AreEnemiesPresent())
         {
             ActivateObelisk();
         }
     }
 
+    private bool AreEnemiesPresent()
+    {
+        GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
+        return enemies.Length > 0;
+    }
+
     private void ActivateObelisk()
     {
         // Add your obelisk activation code here
-         animator.SetBool(AnimationStrings.isActivated, true);
+        SceneManager.LoadScene(sceneToLoad);
+        animator.SetBool("isActivated", true);
     }
 }
-
-
-

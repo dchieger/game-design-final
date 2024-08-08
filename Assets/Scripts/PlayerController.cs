@@ -1,202 +1,278 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.InputSystem;
-
-[RequireComponent(typeof(CapsuleCollider2D))]
+using UnityEngine.SceneManagement;
 public class PlayerController : MonoBehaviour
 {
-    public float walkSpeed = 3f;
-    public float airWalkSpeed = 3f;
-    public float attackingMoveSpeed = 2f;
-    public float jumpImpulse = 8f;
-    public float groundDistance = 0.05f;
+    public int health = 100;
+    public float moveSpeed = 5f;
+    public float jumpForce = 10f;
+    public Transform groundCheck;
+    public LayerMask groundLayer;
 
-    Rigidbody2D rb;
-    Vector2 moveInput;
-    Animator animator;
-    CapsuleCollider2D physCollider;
+    public BoxCollider2D attack1Collider;
+    public BoxCollider2D attack2Collider;
+    public BoxCollider2D glitchSweepCollider;
+    public BoxCollider2D glitchSlicesCollider;
 
-    [Header("Physics State")]
-    [SerializeField]
-    private bool _isFacingRight = true;
+    private Rigidbody2D rb;
+    private Animator animator;
+    private bool isGrounded;
+    private bool canDoubleJump;
+    private bool isFacingRight = true;
+    private bool isInvincible = false;
+    private int hitCounter = 0;
+    private float lastAttackTime = 0f;
+    private float attackCooldown = 0.25f; // Cooldown duration in seconds
+    private Health healthComponent;
+    private bool enemyHit = false;
+    private DamageTextManager damageTextManager;
 
-    internal bool IsFacingRight { get { return _isFacingRight; } set { _isFacingRight = value; animator.SetBool(AnimationStrings.isFacingRight, value); } }
-
-    [SerializeField]
-    private bool _isMoving;
-    private Vector2 facingDirection;
-    private ContactPoint2D[] contactPoints = new ContactPoint2D[20];
-
-    internal bool IsMoving { get { return _isMoving; } set { _isMoving = value; animator.SetBool(AnimationStrings.isMoving, value); } }
-
-    // Set in animator behaviours so only getting the property
-    internal bool CanMove { get { return animator.GetBool(AnimationStrings.canMove); } }
-
-    private bool IsAttacking { get { return animator.GetBool(AnimationStrings.isAttacking); } }
-
-    private float currentMoveSpeed => CalculateMoveSpeed();
-
-    public bool IsHit { get { return animator.GetBool(AnimationStrings.isHit); } set { animator.SetBool(AnimationStrings.isHit, value); } }
-
-    public bool IsAlive { get { return animator.GetBool(AnimationStrings.isAlive); } }
-
-    private TouchingDirections touchingDirections;
-
-    private float CalculateMoveSpeed()
-    {
-        if (CanMove)
-        {
-            // X Movement
-            if (_isMoving)
-            {
-                if (touchingDirections.IsGrounded)
-                {
-                    // Character is on the ground
-                    if(IsAttacking)
-                    {
-                        // Attack preceeds other movement
-                        return attackingMoveSpeed;
-                    }
-                    else
-                    {
-                        // Walk Move
-                        return walkSpeed;
-                    }
-                }
-                else
-                {
-                    // Air walk
-                    if (IsAttacking)
-                    {
-                        return attackingMoveSpeed;
-                    } 
-                    else
-                    {
-                        return airWalkSpeed;
-                    }
-                }
-            }
-            else
-            {
-                // Not moving so movement is 0
-                return 0;
-            }
-        }
-
-        return 0;
-    }
-
-    private void Awake()
+    void Start()
     {
         rb = GetComponent<Rigidbody2D>();
         animator = GetComponent<Animator>();
-        physCollider = GetComponent<CapsuleCollider2D>();
-        touchingDirections = GetComponent<TouchingDirections>();
+        damageTextManager = FindObjectOfType<DamageTextManager>();
+        healthComponent = GetComponent<Health>();
+        healthComponent.OnDeath += Die;
     }
 
-    private void FixedUpdate()
+    void Update()
     {
-        if(IsAlive)
+        // Check if the player is grounded
+        isGrounded = Physics2D.OverlapCircle(groundCheck.position, 0.1f, groundLayer);
+
+        // Reset double jump when grounded
+        if (isGrounded)
         {
-            // Keep the Touching Directions settings updated to the players current state
-            touchingDirections.wallDistance = currentMoveSpeed * Time.fixedDeltaTime;
-            touchingDirections.wallCheckDirection = facingDirection;
-
-            // Update parameters on animator
-            animator.SetBool(AnimationStrings.isMoving, moveInput != Vector2.zero ? true : false);
-            animator.SetFloat(AnimationStrings.xVelocity, rb.velocity.x);
-
-            // Needed for falling / jumping animation decision
-            animator.SetFloat(AnimationStrings.yVelocity, rb.velocity.y);
-
-            // Being hit locks movement from changing as the velocity is set by the knockback hit
-            if (IsHit)
-            {
-                // Controlled by knockback
-            }
-            else if (!touchingDirections.IsOnWall)
-            {
-                rb.velocity = new Vector2(currentMoveSpeed * moveInput.x, rb.velocity.y);
-            }
+            canDoubleJump = true;
         }
-    }
 
-    // Unity InputSystem PlayerInput Actions
-    public void OnMove(InputAction.CallbackContext context)
-    {
-        moveInput = context.ReadValue<Vector2>();
+        // Horizontal movement
+        float moveHorizontal = Input.GetAxisRaw("Horizontal");
+        rb.velocity = new Vector2(moveHorizontal * moveSpeed, rb.velocity.y);
 
-        IsMoving = moveInput != Vector2.zero ? true : false;
-
-        // Allowed to switch direction
-        if (IsAlive)
-            SetFacingDirection(moveInput);
-    }
-
-    public void OnAttack(InputAction.CallbackContext context)
-    {
-        if (context.started)
+        // Jumping
+        if (Input.GetKeyDown(KeyCode.Space))
         {
-            animator.SetTrigger(AnimationStrings.attack);
-
-            if(touchingDirections.IsGrounded)
-                animator.SetTrigger(AnimationStrings.ground_interrupt);
-        }
-    }
-
-
-
-    // Jump keys pressed
-    public void OnJump(InputAction.CallbackContext context)
-    {
-       
-        if (context.started && touchingDirections.IsGrounded)
-        {
-            if (IsAlive)
+            if (isGrounded)
             {
-                // jumpTrigger = true;
-                animator.SetTrigger(AnimationStrings.jump);
-                animator.SetTrigger(AnimationStrings.ground_interrupt);
-
-                rb.velocity = new Vector2(rb.velocity.x, jumpImpulse);
+                Jump();
+            }
+            else if (canDoubleJump)
+            {
+                DoubleJump();
             }
         }
-    }
 
-    // Jump game action
-    public void Jump()
-    {
-        rb.velocity = new Vector2(rb.velocity.x, rb.velocity.y + jumpImpulse);
-    }
-
-    // Flips facing direction of the the transform when x movement direction changes
-    private void SetFacingDirection(Vector2 inputDirection)
-    {
-        // Flip if now moving to the right
-        if (inputDirection.x > 0 && !IsFacingRight)
+        // Flip the player sprite if moving in opposite direction
+        if (moveHorizontal > 0 && !isFacingRight)
         {
-            IsFacingRight = true;
-            transform.localScale *= new Vector2(-1, 1);
-            facingDirection = Vector2.right;
+            Flip();
         }
-        // Flip if now moving to the left
-        else if (inputDirection.x < 0 && IsFacingRight)
+        else if (moveHorizontal < 0 && isFacingRight)
         {
-            IsFacingRight = false;
-            transform.localScale *= new Vector2(-1, 1);
-            facingDirection = Vector2.left;
+            Flip();
+        }
+
+        // Attack inputs
+        if (Input.GetButtonDown("Fire1") && Time.time - lastAttackTime >= attackCooldown)
+        {
+            if (hitCounter >= 5)
+            {
+                GlitchSlices();
+                hitCounter = 0; // Reset the hit counter after performing Glitch Slices
+            }
+            else
+            {
+                PerformRandomAttack();
+            }
+            lastAttackTime = Time.time; // Update the time of the last attack
+        }
+        else if (Input.GetKeyDown(KeyCode.Q))
+        {
+            GlitchSweep();
+        }
+
+        // Update animator
+        animator.SetBool("isGrounded", isGrounded);
+        animator.SetFloat("Speed", Mathf.Abs(moveHorizontal));
+    }
+
+    void Jump()
+    {
+        rb.velocity = new Vector2(rb.velocity.x, jumpForce);
+        animator.SetTrigger("Jump");
+    }
+
+    void DoubleJump()
+    {
+        rb.velocity = new Vector2(rb.velocity.x, jumpForce);
+        canDoubleJump = false;
+        animator.SetTrigger("DoubleJump");
+    }
+
+    void Flip()
+    {
+        isFacingRight = !isFacingRight;
+        Vector3 scale = transform.localScale;
+        scale.x *= -1;
+        transform.localScale = scale;
+    }
+
+    public void OnDamageTaken(int damage)
+    {
+        if (!isInvincible)
+        {
+            SoundManager.Instance.PlayHurtSound();
+            healthComponent.TakeDamage(damage);
+            damageTextManager.ShowDamageText(damage,transform.position);
+            if (healthComponent.currentHealth <= 0)
+            {
+                Die();
+                SceneManager.LoadScene(5);
+            }
+            else
+            {
+                animator.SetTrigger("Hit");
+                ApplyKnockback();
+            }
         }
     }
 
-    // Called from JumpBehaviour in State Machine
-    internal void ApplyJumpForce()
+    private void ApplyKnockback()
     {
-        rb.AddForce(new Vector2(0, jumpImpulse), ForceMode2D.Impulse);
+        float knockbackForce = 5f;
+        float knockbackHeight = 2f;
+        Vector2 knockbackDirection = isFacingRight ? new Vector2(-knockbackForce, knockbackHeight) : new Vector2(knockbackForce, knockbackHeight);
+        rb.AddForce(knockbackDirection, ForceMode2D.Impulse);
     }
 
-    public void OnHit(int damage, Vector2 knockback)
+    private void Die()
     {
-        IsHit = true;
-        rb.velocity = new Vector2(knockback.x, knockback.y + rb.velocity.y);
+        animator.SetBool("isAlive", false);
+        SceneManager.LoadScene(5);
+        Destroy(gameObject, 1f);
+    }
+
+    private void PerformRandomAttack()
+    {
+        int attackChoice = Random.Range(0, 2);
+        if (attackChoice == 0)
+        {
+            Attack1();
+        }
+        else
+        {
+            Attack2();
+        }
+    }
+
+    void Attack1()
+    {
+        animator.SetTrigger("Attack1");
+        isInvincible = true;
+    }
+
+    void Attack2()
+    {
+        animator.SetTrigger("Attack2");
+        isInvincible = true;
+    }
+
+    void GlitchSweep()
+    {
+        animator.SetTrigger("GlitchSweep");
+        isInvincible = true;
+    }
+
+    void GlitchSlices()
+    {
+        animator.SetTrigger("GlitchSlices");
+        isInvincible = true;
+    }
+
+    // Animation event methods
+    public void ActivateAttack1Collider()
+    {
+        attack1Collider.gameObject.SetActive(true);
+    }
+
+    public void DeactivateAttack1Collider()
+    {
+        attack1Collider.gameObject.SetActive(false);
+        isInvincible = false; // Disable invincibility after the attack
+    }
+
+    public void ActivateAttack2Collider()
+    {
+        attack2Collider.gameObject.SetActive(true);
+    }
+
+    public void DeactivateAttack2Collider()
+    {
+        attack2Collider.gameObject.SetActive(false);
+        isInvincible = false; // Disable invincibility after the attack
+    }
+
+    public void ActivateGlitchSweepCollider()
+    {
+        glitchSweepCollider.gameObject.SetActive(true);
+    }
+
+    public void DeactivateGlitchSweepCollider()
+    {
+        glitchSweepCollider.gameObject.SetActive(false);
+        isInvincible = false; // Disable invincibility after the attack
+    }
+
+    public void ActivateGlitchSlicesCollider()
+    {
+        glitchSlicesCollider.gameObject.SetActive(true);
+    }
+
+    public void DeactivateGlitchSlicesCollider()
+    {
+        glitchSlicesCollider.gameObject.SetActive(false);
+        isInvincible = false; // Disable invincibility after the attack
+    }
+
+    // Method to increment the hit counter
+    public void IncrementHitCounter()
+    {
+        hitCounter++;
+    }
+
+    private void OnTriggerStay2D(Collider2D other)
+    {
+        if (other.CompareTag("Enemy"))
+        {
+            Health enemyHealth = other.GetComponent<Health>();
+            if (enemyHealth != null)
+            {
+                if (attack1Collider.gameObject.activeSelf || attack2Collider.gameObject.activeSelf)
+                {
+                    SoundManager.Instance.PlayHitSound();
+                    enemyHealth.TakeDamage(10);
+                    Debug.Log("Player dealt 10 damage. Enemy health remaining: " + enemyHealth.currentHealth);
+                    IncrementHitCounter();
+                    
+                }
+                else if (glitchSweepCollider.gameObject.activeSelf)
+                {
+                    SoundManager.Instance.PlayHitSound();
+                    enemyHealth.TakeDamage(15);
+                    Debug.Log("Glitch Sweep dealt 15 damage. Enemy health remaining: " + enemyHealth.currentHealth);
+                    IncrementHitCounter();
+                }
+                else if (glitchSlicesCollider.gameObject.activeSelf)
+                {
+                    SoundManager.Instance.PlayHitSound();
+                    enemyHealth.TakeDamage(25);
+                    Debug.Log("Glitch Slices dealt 25 damage. Enemy health remaining: " + enemyHealth.currentHealth);
+                    IncrementHitCounter();
+                }
+            }
+        }
     }
 }
-
